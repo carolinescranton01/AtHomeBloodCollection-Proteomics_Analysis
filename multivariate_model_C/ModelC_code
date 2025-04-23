@@ -15,41 +15,41 @@ design_matrix <- read.delim("~/path/to/data/designmatrix.txt", header=TRUE)
 
 protein_data <- read_excel("~/path/to/data/protein_data_inRFUs.xlsx")
 
-### log2 transformation if data not already log2 transformed - before mutating, data should be rows with sampleID and columns with proteinID + concentrations
+# log2 transformation if data not already log2 transformed - before mutating, data should be rows with sampleID and columns with proteinID + concentrations
 protein_data <- protein_data %>%
   mutate(across(c(2:29), ~ log(., base=2)))
 
-### model design will include Cy3 (time), Cy5 (temperature), group, and participant 
+# model design will include Cy3 (time), Cy5 (temperature), group, and participant 
 time <- design_matrix$Cy3
 temp <- design_matrix$Cy5
 group <- design_matrix$group
 participant_<- design_matrix$participant
 
-### generating the model matrix
+# generating the model matrix
 design_multivariate <- model.matrix(~time+temp+participant)
 
-### fitting a multivariate linear model to the protein data based on the design matrix
+# fitting a multivariate linear model to the protein data based on the design matrix
 fit <- lmFit(protein_data, design_multivariate)
 
-### performing empirical bayes statistics on the model to measure significant changes in log2-fold detection in RFU of individual proteins
+# performing empirical bayes statistics on the model to measure significant changes in log2-fold detection in RFU of individual proteins
 fit <- eBayes(fit, trend=TRUE, robust=TRUE)
 
-### identify significantly impacted proteins
+# identify significantly impacted proteins
 results <- decideTests(fit, method="hierarchical", p=0.05)
 
-### mean-difference plots at proteins impacted by test variables
+# mean-difference plots at proteins impacted by test variables
 plotMD(fit, coef=2, status=results) # coef 2 = time
 plotMD(fit, coef=3, status=results) # coef 3 = temperature
 plotMD(fit, coef=4, status=results) # coef 4 = group
 plotMD(fit, coef=5, status=results) # coef 5 = participant
 
-## generating tables which only list the significantly impacted proteins. n=7600 sets it to list all proteins within the entire dataset, which has less than 7600 proteins
+# generating tables which only list the significantly impacted proteins. n=7600 sets it to list all proteins within the entire dataset, which has less than 7600 proteins
 multi_TopTable_TIME <- topTable(fit, coef=2, p.value=0.05, adjust.method="BH", n=7600)
 multi_TopTable_TEMP <- topTable(fit, coef=3, p.value=0.05, adjust.method="BH", n=7600)
 multi_TopTable_GROUP <- topTable(fit, coef=4, p.value=0.05, adjust.method="BH", n=7600)
 multi_TopTable_PART <- topTable(fit, coef=4, p.value=0.05, adjust.method="BH", n=7600)
 
-### writing TopTables as microsoft excel spreadsheets, for later re-formatting for KEGG pathway analysis
+# writing TopTables as microsoft excel spreadsheets, for later re-formatting for KEGG pathway analysis
 write.xlsx(as.data.frame(multi_TopTable_TIME), 'multi_TopTable_TIME.xlsx')
 write.xlsx(as.data.frame(multi_TopTable_TEMP), 'multi_TopTable_TEMP.xlsx')
 write.xlsx(as.data.frame(multi_TopTable_GROUP), 'multi_TopTable_GROUP.xlsx')
