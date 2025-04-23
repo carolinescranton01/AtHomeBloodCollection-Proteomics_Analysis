@@ -1,0 +1,48 @@
+
+# Installing/loading packages
+library(limma)
+library(statmod)
+library(readxl)
+library(openxlsx)
+library(readr)
+library(clusterProfiler)
+library(org.Hs.eg.db)
+library(ggplot2)
+library(patchwork)
+library(ggpattern)
+library(VennDiagram)
+library(dplyr)
+
+# upload design matrix - csv file which contains 4 columns (SampleNumber, SampleID, group (dummy variable to differentiate between capillary and venous samples), and participant)
+modelB_design <- read.csv("~/path/to/data/design.csv", header=TRUE)
+
+# Upload protein data from excel sheet - data was pre-filtered to only include samples necessary in this analysis (so, the three immediately processed capillary 
+samples and the venous sample)
+TV_modelB <- read_excel("~/path/to/data/data.xlsx")
+
+# Convert RFU to Log2 values (data is in columns 2 to 17, column 1 is the proteinID, columns 2-17 are the different samples, and rows are individual proteins + expression level
+TV_modelB_log2 <- TV_modelB %>%
+  mutate(across(c(2:17), ~ log(., base=2)))
+
+# assigning variables to aspects of design matruix
+group_B <- modelB_design$Group
+part_B <- modelB_design$Participant
+
+# generating the model matrix
+design_B <- model.matrix(~group_B+part_B)
+
+# fitting a multivariate linear model to the protein data based on the design matrix
+fit_B<- lmFit(TV_modelB_log2, design_B)
+
+# performing empirical bayes statistics on the model to measure significant changes in log2-fold detection in RFU of individual proteins
+fit_B <- eBayes(fit_B, trend=TRUE, robust=TRUE)
+
+# identify significantly impacted proteins
+results <- decideTests(fit_B, method="hierarchical", p=0.05)
+
+# generating tables which only list the significantly impacted proteins. n=7600 sets it to list all proteins within the entire dataset, which has less than 7600 proteins
+fit_B_toptable <- topTable(fit_B, coef=2, p.value=0.05, adjust.method="BH", n=7600)
+
+# writing data to an excel document for later restructuring for KEGG analysis
+write.xlsx(as.data.frame(fit_B_toptable), 'fitBtoptable.xlsx')
+
