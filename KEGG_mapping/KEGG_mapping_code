@@ -1,0 +1,29 @@
+# Load packages
+library(clusterProfiler)
+library(org.Hs.eg.db)
+library(readxl)
+library(patchwork)
+library(openxlsx)
+
+# KEGG analysis of proteins which significantly differed using models A, B, or C
+
+# Import excel sheet of significantly-changed proteins, generated using models A, B, or C
+proteins <- read_excel("~/path/to/data/significant_proteins.xlsx")
+
+# convert Uniprot IDs into a list and rename
+protein_ID <- as.list(proteins$ProteinID) # make sure 'ProteinID' is consistent with your data, should be column name of protein IDs
+
+# enrichKEGG on protein list - note: if protein IDs are not UniProt IDs, change keyType argument
+kegg_paths <- enrichKEGG(protein_ID, organism="hsa", keyType="uniprot", pvalueCutoff = 0.05)
+
+# convert results from enrichResult object into dataframe with KEGG_IDs, Pathways (subcategories), Categories
+pathways <- kegg_paths@result
+pathways$proteinID <- strsplit(as.character(TV_KEGG_A_genes$ProteinID), "/")
+pathways_table <- data.frame(
+  ProteinID = unlist(pathways$ProteinID),
+  pathway = rep(pathways$subcategory, sapply(pathways$ProteinID, length)),
+  category = rep(pathways$category, sapply(pathways$ProteinID, length)),
+  stringsAsFactors = FALSE)
+
+# Write excel file of the pathway tables (enrichKEGG results) for other analysis
+write.xlsx(as.data.frame(pathways_table), 'pathways_table.xlsx')
