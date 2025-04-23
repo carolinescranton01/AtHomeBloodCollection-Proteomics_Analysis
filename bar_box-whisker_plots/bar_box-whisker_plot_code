@@ -1,43 +1,34 @@
+# load packages
+library(ggplot2)
+library(patchwork)
+library(ggpattern)
 
-#Re-import matched data which is listed as one table, with columns participant, KEGG_ID, pathway, category, and LFC
-TV_KEGG_All <- read_excel("~/Desktop/Research/Covid-GI_R01/Pilot_Project/Pilot_Results/Limma_KEGG/Limma_Analysis_redo_CURRENT/9_7_24/Tasso_Venous_KEGG_All.xlsx", sheet="All")
+# Re-import matched data which is listed as one table, with columns Participant, ProteinID, Pathway, Category, and Log2FC (matching was done in excel)
+data <- read_excel("~/path/to/data/kegg_data.xlsx")
 
-#ggplot this data on a bar graph
-TV_KEGG_ALL_bargraph <- ggplot(TV_KEGG_All, aes(x = Pathway, y = Log2FC, fill = Category)) + geom_bar(stat = "identity") + theme_bw()+labs(x = "KEGG Pathway ID", y = "LogFC")+theme( axis.text.x=element_text(color = "black", size=8, angle=90, vjust=0.83, hjust=1), legend.position = "bottom")+ylim(-60000, 85000)+theme(plot.title = element_text(size=30))
+# bar graph
+kegg_bargraph <- ggplot(data, aes(x = Pathway, y = Log2FC, fill = Category)) + 
+  geom_bar(stat = "identity") + theme_bw()+labs(x = "KEGG Pathway ID", y = "LogFC") +
+  theme( axis.text.x=element_text(color = "black", size=8, angle=90, vjust=0.83, hjust=1), legend.position = "bottom")+ylim(-60000, 85000) + 
+  theme(plot.title = element_text(size=30)) +
+  labs(title="TITLE")
 
-#Adding title
-TV_KEGG_ALL_bargraph + labs(
-  title="Pathways Impacted by Capillary Versus Venous Blood Draw (from Univariate Model)")
+# IF NEEDED - facet_wrap by participant
+kegg_bargraph + facet_wrap(~Participant)
 
-#FW by participant and adding different title
-TV_KEGG_ALL_bargraph+facet_wrap(~Participant)
+print(kegg_bargraph)
 
-TV_ALL_boxbar1 <- ggplot(TV_KEGG_All, aes(x = Pathway, y = Log2FC, fill = Category)) + geom_bar(stat = "identity", na.rm=T, alpha=0.5) + 
-  theme_bw()+
-  labs(x = "KEGG Pathway ID", y = "LogFC")+ 
-  theme(axis.text.x = element_text(color = "black", size = 12, angle = 90, vjust = 0.83, hjust = 1),axis.text.y = element_text(size = 12, color = "black"),legend.position = "bottom")+
-  ylim(-60000, 85000)+
-  theme(plot.title = element_text(size=25))+
-  geom_point(aes(color = Category), position = position_dodge(width = 0.9), size = 2, shape = 21, fill = "black", alpha=0.8)+
-  geom_boxplot(alpha=1)+
-  facet_wrap(~Participant)+
-  labs(title="Pathways Impacted by Capillary Versus Venous Blood Draw (from Univariate Model) Sorted by Participant")+
-  theme(plot.title = element_text(size=25))
-
-
-TV_KEGG_All <- ggplot(TV_KEGG_All, aes(x = Pathway, y = Log2FC, fill = Category))+ geom_bar(stat = "identity", na.rm=T, alpha=1, position=position_identity()) + 
-  theme_bw()+
-  labs(x = "KEGG Pathway ID", y = "LogFC")+ 
-  theme(axis.text.x = element_text(color = "black", size = 12, angle = 90, vjust = 0.83, hjust = 1),axis.text.y = element_text(size = 12, color = "black"),legend.position = "bottom")+
-  scale_y_continuous(limits = c(-5, 2.5))+
-  theme(plot.title = element_text(size=25))+
-  geom_point(aes(color = Category), position = position_dodge(width = 0.9), size = 1, shape = 21, fill = "black", alpha=0.8)+
-  geom_boxplot(alpha=0.5, fill="white")+
-  labs(
-  title="Pathways Impacted by Capillary Versus Venous Blood Draw (from Univariate Model) Sorted by Participant")+
+# bar graph with boxplot overlay
+kegg_boxbar <- ggplot(data, aes(x = Pathway, y = Log2FC, fill = Category)) + 
+  geom_bar(stat = "identity", na.rm=T, alpha=1, position=position_identity()) + 
+  theme_bw() +
+  labs(x = "KEGG Pathway ID", y = "LogFC") + 
+  theme(axis.text.x = element_text(color = "black", size = 12, angle = 90, vjust = 0.83, hjust = 1),axis.text.y = element_text(size = 12, color = "black"),legend.position = "bottom") +
+  scale_y_continuous(limits = c(-5, 2.5)) +
+  theme(plot.title = element_text(size=25)) +
+  geom_point(aes(color = Category), position = position_dodge(width = 0.9), size = 1, shape = 21, fill = "black", alpha=0.8) +
+  geom_boxplot(alpha=0.5, fill="white") +
+  labs(title="TITLE") +
   theme(plot.title = element_text(size=25))+facet_wrap(~Participant)
 
-TV_KEGG_All
-# stats to compare the groups to eeach other
-
-```
+print(kegg_boxbar)
