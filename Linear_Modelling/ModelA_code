@@ -1,0 +1,44 @@
+# Example code to generate one model of model structure A
+# loading packages
+library(limma)
+library(statmod)
+library(readxl)
+library(openxlsx)
+library(dplyr)
+
+# Importing design matrixes and protein data
+design_matrix <- read.delim("~/path/to/data/design.csv", header=TRUE)
+
+protein_data <- read_excel("~/path/to/data/protein_data.xlsx")
+
+# Converting to log2 (if not already done) - data is in columns 2 through 9 
+protein_data <- protein_data %>%
+mutate(across(c(2:9), ~ log(., base=2)))
+
+# Creating a linear model only comparing one sample to the three capillary baseline samples
+# creating group variable
+group <- design_matrix$group
+
+# subsetting proteomic data to include the 3 baseline columns and the one sample of interest column
+protein_data_1 <- protein_data[,c(1:5)] 
+
+# creating the model design variable, to map the design matrix to the data set, where RFU is the 
+# response variable and group (0 = baseline, 1 = other) is the explanatory variable
+design1 <- model.matrix(~group)
+
+#Creating a linear fit with this model design
+fit <- lmFit(protein_data_1, design1)
+fit <- eBayes(fit, trend=TRUE, robust=TRUE)
+
+# empirical bayes statistics on the fit for the adjusted P values
+
+results <- decideTests(fit, method="hierarchical", p=0.05)
+summary(results)
+
+# Toptable to pull out anything which has a significant adjusted P value for coefficient 2 
+# (in this case, that is the group variable). n=7600 to include all data points
+TopTable <- topTable(fit, coef=2, p.value=0.05, adjust.method="BH", n=7600)
+
+# if needed, list of proteins which were NOT significantly impacted in this model + write as a table
+NS <- setdiff(protein_data_1$SampleId, TopTable$SampleId)
+write.table(NS, file = "NS.txt", row.names = FALSE, col.names = FALSE, quote = FALSE)
