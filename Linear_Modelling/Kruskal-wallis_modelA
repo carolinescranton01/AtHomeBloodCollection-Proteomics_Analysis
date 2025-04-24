@@ -1,0 +1,19 @@
+# Kruskal-Wallis test with Dunn correction to look at compare impacted proteins between participants (from Model A Capillary vs Venous samples)
+
+# data is excel sheet with 3 columns - participant, UniprotID, and log2 fold change - organized in microsoft excel from outputs of other code
+
+# re-import data
+KW_data <- read_excel("~/path/to/data/KW_reorganized_data.xlsx")
+
+# perform the Kruskal-Wallis test
+kruskal_result <- kruskal.test(Log2FC ~ Participant, data = KW_data)
+
+# print the results
+print(kruskal_result)
+
+# if significant, perform post-hoc analysis using Dunn's test with bh correction
+if (kruskal_result$p.value < 0.05) {
+  library(FSA)
+  dunn_result <- dunnTest(Log2FC ~ Participant, data = KW_data, method = "bh")
+  print(dunn_result)
+}
